@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "318058389502",
+    "project_id": "guimod-manager",
+    "storage_bucket": "guimod-manager.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:318058389502:android:cc7576597d0c9f75fcaaaf",
+        "android_client_info": {
+          "package_name": "com.gpscell.manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdEWF1n-D2RFHb7S_LGWRPHJryrmwg5hI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
