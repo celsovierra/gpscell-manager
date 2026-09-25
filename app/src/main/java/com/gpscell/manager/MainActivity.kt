@@ -1,8 +1,11 @@
-package com.gpscell.manager
+﻿package com.gpscell.manager
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -10,6 +13,7 @@ import android.os.Looper
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
 import android.webkit.JavascriptInterface
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -26,8 +30,39 @@ class MainActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private var isTokenRegistered = false
 
+    private var filePathCallback: ValueCallback<Array<Uri>>? = null
+
+    private val fileUploadLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val data = result.data
+                if (data != null && data.dataString != null) {
+                    filePathCallback?.onReceiveValue(arrayOf(Uri.parse(data.dataString)))
+                } else if (data != null && data.clipData != null) {
+                    val clipData = data.clipData
+                    val uris = arrayOfNulls<Uri>(clipData!!.itemCount)
+                    for (i in 0 until clipData.itemCount) {
+                        uris[i] = clipData.getItemAt(i).uri
+                    }
+                    filePathCallback?.onReceiveValue(uris.filterNotNull().toTypedArray())
+                } else {
+                    filePathCallback?.onReceiveValue(null)
+                }
+            } else {
+                filePathCallback?.onReceiveValue(null)
+            }
+            filePathCallback = null
+        }
+
     private val requestNotificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> }
+
+    private val requestCameraPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                webView.reload()
+            }
+        }
 
     private val syncRunnable = object : Runnable {
         override fun run() {
@@ -80,11 +115,39 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.webChromeClient = object : WebChromeClient() {
+            override fun onPermissionRequest(request: android.webkit.PermissionRequest?) {
+                request?.grant(request.resources)
+            }
+
             override fun onGeolocationPermissionsShowPrompt(
                 origin: String?,
                 callback: GeolocationPermissions.Callback?
             ) {
                 callback?.invoke(origin, true, false)
+            }
+
+            override fun onShowFileChooser(
+                webView: WebView?,
+                callback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: FileChooserParams?
+            ): Boolean {
+                if (filePathCallback != null) {
+                    filePathCallback?.onReceiveValue(null)
+                }
+                filePathCallback = callback
+
+                val intent = fileChooserParams?.createIntent()
+                try {
+                    if (intent != null) {
+                        fileUploadLauncher.launch(intent)
+                    } else {
+                        return false
+                    }
+                } catch (e: ActivityNotFoundException) {
+                    filePathCallback = null
+                    return false
+                }
+                return true
             }
         }
 
@@ -174,6 +237,13 @@ class MainActivity : AppCompatActivity() {
             ) {
                 requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
+        }
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.CAMERA
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
 
