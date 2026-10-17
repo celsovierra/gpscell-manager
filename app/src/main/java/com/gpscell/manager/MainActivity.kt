@@ -104,8 +104,14 @@ class MainActivity : AppCompatActivity() {
         webView.addJavascriptInterface(WebAppInterface(), "AndroidNative")
 
         webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: android.webkit.WebResourceRequest?): Boolean {
+                val url = request?.url?.toString() ?: return false
+                return handleExternalUrl(url)
+            }
+
+            @Suppress("DEPRECATION")
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                return false
+                return handleExternalUrl(url ?: return false)
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
@@ -254,5 +260,31 @@ class MainActivity : AppCompatActivity() {
                 fcmToken = task.result
             }
         }
+    }
+
+    private fun handleExternalUrl(url: String): Boolean {
+        val externos = listOf(
+            "https://maps.google.com",
+            "https://www.google.com/maps",
+            "geo:",
+            "whatsapp:",
+            "intent:",
+            "tel:",
+            "mailto:",
+            "tg:",
+            "https://t.me/",
+            "https://telegram.me/",
+            "http://t.me/",
+            "http://telegram.me/"
+        )
+        if (externos.any { url.startsWith(it) }) {
+            return try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                true
+            } catch (e: ActivityNotFoundException) {
+                false
+            }
+        }
+        return false
     }
 }

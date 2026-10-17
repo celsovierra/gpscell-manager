@@ -1,17 +1,17 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.application)
     id("com.google.gms.google-services")
 }
 
 android {
     namespace = "com.gpscell.manager"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.gpscell.manager"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 1
+        targetSdk = 36
+        versionCode = 2
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
